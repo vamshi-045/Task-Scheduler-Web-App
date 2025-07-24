@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Scheduler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: poppins, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #c4c1d6;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px 5px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 400px;
+        }
+
+        h1,
+        h2 {
+            margin-bottom: 15px;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            background: #28a745;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #218838;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+        }
+
+        .completed {
+            text-decoration: line-through;
+            color: gray;
+        }
+
+        .delete-btn {
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .delete-btn:hover {
+            background: darkred;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>📅 Task Scheduler</h1>
+        <div class="input-section">
+            <input type="text" id="taskInput" placeholder="Enter Task">
+            <input type="number" id="priorityInput" placeholder="Priority">
+            <input type="date" id="deadlineInput">
+            <button onclick="addTask()">Add Task</button>
+        </div>
+        <h2>📝 Scheduled Tasks</h2>
+        <ul id="taskList"></ul>
+        <button onclick="executeTask()">Execute Task</button>
+    </div>
+    <script>
+
+        class Task {
+            constructor(name, priority, deadline) {
+                this.name = name;
+                this.priority = priority;
+                this.deadline = new Date(deadline);
+            }
+        }
+
+
+
+        class MinHeap {
+            constructor() {
+                this.heap = [];
+            }
+
+            insert(task) {
+                this.heap.push(task);
+                this.heapifyUp();
+            }
+
+            remove() {
+                if (this.heap.length === 0) return null;
+                if (this.heap.length === 1) return this.heap.pop();
+                const minTask = this.heap[0];
+                this.heap[0] = this.heap.pop();
+                this.heapifyDown();
+                return minTask;
+            }
+
+            heapifyUp() {
+                let index = this.heap.length - 1;
+                while (index > 0) {
+                    let parentIndex = Math.floor((index - 1) / 2);
+                    if (this.heap[parentIndex].priority <= this.heap[index].priority) break;
+                    [this.heap[parentIndex], this.heap[index]] = [this.heap[index], this.heap[parentIndex]];
+                    index = parentIndex;
+                }
+            }
+
+            heapifyDown() {
+                let index = 0;
+                const length = this.heap.length;
+                while (true) {
+                    let leftChild = 2 * index + 1;
+                    let rightChild = 2 * index + 2;
+                    let smallest = index;
+
+                    if (leftChild < length && this.heap[leftChild].priority < this.heap[smallest].priority) {
+                        smallest = leftChild;
+                    }
+
+                    if (rightChild < length && this.heap[rightChild].priority < this.heap[smallest].priority) {
+                        smallest = rightChild;
+                    }
+
+                    if (smallest === index) break;
+                    [this.heap[index], this.heap[smallest]] = [this.heap[smallest], this.heap[index]];
+                    index = smallest;
+                }
+            }
+
+            getTasks() {
+                return [...this.heap].sort((a, b) => a.priority - b.priority);
+            }
+        }
+
+        const taskQueue = new MinHeap();
+
+        function addTask() {
+            const taskInput = document.getElementById("taskInput").value.trim();
+            const priorityInput = parseInt(document.getElementById("priorityInput").value);
+            const deadlineInput = document.getElementById("deadlineInput").value;
+
+            if (!taskInput || isNaN(priorityInput) || !deadlineInput) {
+                alert("Please enter a valid task name, priority, and deadline!");
+                return;
+            }
+
+            if (priorityInput <= 0) {
+                alert("Priority must be a positive number greater than zero!");
+                return;
+            }
+
+            const task = new Task(taskInput, priorityInput, deadlineInput);
+            taskQueue.insert(task);
+            displayTasks();
+        }
+
+
+        function executeTask() {
+            const executedTask = taskQueue.remove();
+            if (executedTask) {
+                alert(`✅ Executed Task: ${executedTask.name} (Priority: ${executedTask.priority})`);
+                displayTasks();
+            } else {
+                alert("📌 No tasks left to execute!");
+            }
+        }
+
+        function displayTasks() {
+            const taskList = document.getElementById("taskList");
+            taskList.innerHTML = "";
+
+            taskQueue.getTasks().forEach(task => {
+                let li = document.createElement("li");
+                li.innerHTML = `${task.name} (Priority: ${task.priority}, Deadline: ${task.deadline.toDateString()})`;
+                taskList.appendChild(li);
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>
